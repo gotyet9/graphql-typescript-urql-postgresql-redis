@@ -6,6 +6,7 @@
     "@mikro-orm/migrations": "^4.0.0-alpha.0",
     "@mikro-orm/postgresql": "^4.0.0-alpha.0",
     "apollo-server-express": "^2.16.1",
+    "argon2": "^0.27.0",
     "class-validator": "^0.12.2",
     "express": "^4.17.1",
     "graphql": "^15.3.0",
@@ -36,7 +37,8 @@
     "dev2": "nodemon ts-node src/index.ts",
     "start": "node dist/src/index.js",
     "start2": "ts-node src/index.ts",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "create:migration": "mikro-orm migration:create"
   },
   "version": "1.0.0"
 }
