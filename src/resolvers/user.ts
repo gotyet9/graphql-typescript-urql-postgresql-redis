@@ -1,8 +1,9 @@
-import { Resolver, Ctx, Arg, Mutation, ObjectType, Field } from "type-graphql";
+import { Resolver, Ctx, Arg, Mutation, ObjectType, Field, Query } from "type-graphql";
 import argon2 from 'argon2';
 import { User } from "../entities/User";
 import { MyContext } from "../types";
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
+import shortid from "shortid";
 
 @ObjectType()
 class FieldError {
@@ -24,25 +25,35 @@ class UserResponse {
 
 @Resolver()
 export class RegisterResolver {
+    @Query(() => User, { nullable: true })
+    me(@Ctx() { db, req }: MyContext) {
+        // you are not logged in
+        if (!req.session!.userId) {
+            return null;
+        }
+        return db.collection('users').findOne({ id: req.session!.userId });
+    }
     @Mutation(() => User)
     async register(
         @Arg('userInput') userInput: UsernamePasswordInput,
-        @Ctx() { em }: MyContext): Promise<User> {
-
+        @Ctx() { db }: MyContext): Promise<User | null> {
         const hashedPassword = await argon2.hash(userInput.password);
-        const user = em.create(User, {
+        const userId = shortid.generate();
+        await db.collection('users').insertOne({
+            id: userId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
             username: userInput.username,
             password: hashedPassword
         });
-        await em.persistAndFlush(user);
-        return user;
+        return db.collection('users').findOne({ id: userId });;
     }
     @Mutation(() => UserResponse)
     async login(
         @Arg("usernameOrEmail") usernameOrEmail: string,
         @Arg("password") password: string,
-        @Ctx() { em }: MyContext): Promise<UserResponse> {
-        const user = await em.findOne(User, { username: usernameOrEmail });
+        @Ctx() { db, req }: MyContext): Promise<UserResponse> {
+        const user = await db.collection('users').findOne({ username: usernameOrEmail });
         if (!user) {
             return {
                 errors: [
@@ -64,6 +75,11 @@ export class RegisterResolver {
                 ],
             };
         }
+
+        // store userId in session
+
+        req.session!.userId = user.id;
+
         return { user };
     }
 }

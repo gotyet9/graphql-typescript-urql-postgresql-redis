@@ -1,5 +1,9 @@
-import { EntityManager, IDatabaseDriver, Connection } from "@mikro-orm/core";
+import { Request, Response } from "express";
+import { Db, MongoClient } from "mongodb";
 
 export type MyContext = {
-    em: EntityManager<any> & EntityManager<IDatabaseDriver<Connection>>
+    db: Db,
+    dbClient: MongoClient,
+    req: Request,
+    res: Response
 }
