@@ -1,14 +1,29 @@
 import { MikroORM } from '@mikro-orm/core';
 import { __prod__ } from '../constants';
-// import { Product } from './entities/Product';
 import mikroConfig from './mikro-orm.config';
+import express from 'express';
+import { ApolloServer } from 'apollo-server-express';
+import { buildSchema } from 'type-graphql';
+import { HelloResolver } from './resolvers/hello';
 
 const main = async () => {
     const orm = await MikroORM.init(mikroConfig);
     await orm.getMigrator().up();
-    // const product = orm.em.create(Product, { title: 'Macbook pro' });
-    // await orm.em.persistAndFlush(product);
-    // await orm.em.nativeInsert(Product, { title: "my actual product" })
+
+    const app = express();
+
+    const apolloServer = new ApolloServer({
+        schema: await buildSchema({
+            resolvers: [HelloResolver],
+            validate: false
+        })
+    })
+
+    apolloServer.applyMiddleware({ app })
+
+    app.listen(4000, () => {
+        console.log(`server running at localhost:4000`)
+    })
 }
 
 main().catch(error => console.error(error));
